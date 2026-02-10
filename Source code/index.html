@@ -1,0 +1,145 @@
+%%writefile templates/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phish shield</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #030712; --card: #111827; --accent: #38bdf8; --success: #10b981; --danger: #ef4444; --border: #1f2937; --text-dim: #94a3b8; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); color: white; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: #080c14; border-right: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; }
+        .logo { font-weight: 800; font-size: 1.2rem; color: var(--accent); margin-bottom: 2.5rem; }
+        .nav-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .status-pill { background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-align: center; margin-bottom: 2rem; }
+        
+        .main { flex: 1; padding: 2rem; overflow-y: auto; }
+        .search-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; display: flex; padding: 6px; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .search-box input { flex: 1; background: transparent; border: none; color: white; padding: 1rem; font-size: 1rem; outline: none; }
+        .scan-btn { background: var(--accent); border: none; padding: 0 2rem; border-radius: 12px; font-weight: 800; cursor: pointer; }
+
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; display: none; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; }
+        .verdict-box { grid-column: span 5; }
+        .preview-box { grid-column: span 7; }
+        .map-box { grid-column: span 4; max-height: 300px; overflow-y: auto; }
+        .history-box { grid-column: span 8; }
+
+        .terminal { background: #000; border-radius: 12px; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--success); height: 160px; overflow-y: auto; margin-top: 1rem; border: 1px solid #22c55e44; line-height: 1.6; }
+        .browser-frame { background: white; border-radius: 10px; overflow: hidden; border: 3px solid #334155; }
+        .browser-head { background: #334155; padding: 8px; display: flex; gap: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+        #web-img { width: 100%; display: block; height: 260px; object-fit: cover; background: #f1f5f9; }
+
+
+        #init-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <div id="init-overlay">
+        <h1 style="color:var(--accent); font-size: 2.5rem; margin-bottom:0;">PHISH SHIELD <span style="font-weight:200"></span></h1>
+        <p style="color: var(--text-dim); margin-bottom: 2rem;">Initializing Institutional & AI Defense Layers...</p>
+        <button class="scan-btn" style="height:60px;" onclick="init()">START THREAT ENGINE</button>
+    </div>
+
+    <div class="sidebar">
+        <div class="logo">🛡️ SHIELD AI</div>
+        <div class="nav-label">Auditor Status</div>
+        <div id="side-fw" class="status-pill">SYSTEM IDLE</div>
+        
+        <div class="nav-label" style="margin-top:2rem;">Intelligence Mode</div>
+        <div style="font-size: 0.8rem; color: var(--text-dim);">
+            • Institutional Whitelist <span style="color:var(--success)">ON</span><br>
+            • AI Heuristics <span style="color:var(--success)">ON</span><br>
+            • Squatting Detection <span style="color:var(--success)">ON</span>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="search-box">
+            <input type="text" id="url-input" placeholder="Enter target URL (e.g. vit.edu.in or suspicious-link.com)...">
+            <button class="scan-btn" onclick="scan()">RUN DEEP SCAN</button>
+        </div>
+
+        <div class="grid" id="main-grid">
+            <div class="card verdict-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 id="res-title" style="margin:0">Analysis</h3>
+                    <div id="res-badge" style="padding:4px 12px; border-radius:100px; font-size:0.7rem; font-weight:800;">PENDING</div>
+                </div>
+                <p id="res-reason" style="color:var(--text-dim); font-size:0.8rem; margin: 1rem 0;"></p>
+                <div class="terminal" id="term">> Waiting for data...</div>
+            </div>
+
+            <div class="card preview-box">
+                <h4 style="margin:0 0 10px 0; font-size:0.7rem; color:var(--text-dim); text-transform: uppercase;">Visual Sandbox</h4>
+                <div class="browser-frame">
+                    <div class="browser-head"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                    <img id="web-img" src="">
+                </div>
+            </div>
+
+            <div class="card map-box">
+                <h4 style="margin:0 0 10px 0; font-size:0.7rem; color:var(--text-dim); text-transform: uppercase;">Infrastructure</h4>
+                <div id="fw-details" style="font-size: 0.85rem;">
+                    <div style="color:var(--accent); font-weight:800; font-size:1.2rem;" id="main-fw">None</div>
+                    <p style="color:var(--text-dim); margin-top:5px;">No framework detected yet.</p>
+                </div>
+            </div>
+
+            <div class="card history-box">
+                <h4 style="margin:0 0 10px 0; font-size:0.7rem; color:var(--text-dim); text-transform: uppercase;">Recent Scan Intelligence</h4>
+                <table style="width:100%; font-size:0.8rem; border-spacing: 0 8px;">
+                    <tbody id="hist"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function init() { 
+            fetch('/initialize', {method: 'POST'})
+            .then(() => document.getElementById('init-overlay').style.display = 'none'); 
+        }
+
+        function scan() {
+            const url = document.getElementById('url-input').value;
+            if(!url) return;
+
+            document.getElementById('main-grid').style.display = 'grid';
+            const term = document.getElementById('term');
+            term.innerHTML = `> [INIT] Analyzing ${url}...<br>`;
+
+            fetch('/scan', { method: 'POST', body: new URLSearchParams({url: url}) })
+            .then(r => r.json()).then(data => {
+
+                document.getElementById('side-fw').innerText = data.framework.toUpperCase();
+                document.getElementById('main-fw').innerText = data.framework;
+                
+                document.getElementById('res-title').innerText = data.result;
+                document.getElementById('res-reason').innerText = data.reason;
+                
+                const b = document.getElementById('res-badge');
+                b.innerText = data.safe ? "SAFE" : "MALICIOUS";
+                b.style.background = data.safe ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)";
+                b.style.color = data.safe ? "#10b981" : "#ef4444";
+
+                
+                term.innerHTML += `> <span style="color:var(--accent)">[AUDIT]</span> Framework: ${data.framework}<br>`;
+                term.innerHTML += `> <span style="color:var(--accent)">[AI]</span> Score: ${(data.ai_score * 100).toFixed(1)}% risk<br>`;
+                term.innerHTML += `> <span style="color:var(--success)">[COMPLETE]</span> Scan finished.`;
+
+                
+                const cleanUrl = url.replace(/^https?:\/\//, '');
+                document.getElementById('web-img').src = `https://s.wordpress.com/mshots/v1/http://${cleanUrl}?w=800`;
+                
+                const row = `<tr><td>${url}</td><td><b style="color:${data.safe?'#10b981':'#ef4444'}">${data.result}</b></td></tr>`;
+                document.getElementById('hist').innerHTML = row + document.getElementById('hist').innerHTML;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+from pyngrok import ngrok
+import os
+import time
+
+!pkill -f ngrok
+!pkill -f flask
+ngrok.kill()
+
+!rm -rf /root/.ngrok2
+!rm -rf /root/.config/ngrok
+
+print("🧹 Deep cleaning complete. Starting fresh...")
+time.sleep(2)
+
+NGROK_TOKEN = "YOUR_NGROK_TOKEN"  #Add your Ngrok Token
+ngrok.set_auth_token(NGROK_TOKEN)
+
+
+
+try:
+    
+    public_url = ngrok.connect(5000).public_url
+    print(f"\n✅ SUCCESS! SYSTEM IS REBORN")
+    print(f"🔗 NEW SCANNER LINK: {public_url}")
+    print(f"--------------------------------------------")
+
+    import app
+    from importlib import reload
+    reload(app)
+    app.app.run(port=5000)
+
+except Exception as e:
+    print(f"❌ Error: {e}")
